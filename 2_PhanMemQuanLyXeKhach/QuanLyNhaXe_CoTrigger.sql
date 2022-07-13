@@ -1,12 +1,12 @@
-use master
+﻿use master
 go
 create database dbQuanLyNhaXe
 go
 use dbQuanLyNhaXe
 go
 
--- B?ng n�y d�ng ?? t?ng t? ??ng khi 1 record ???c th�m v�o.
--- D�ng ?? gh�p chu?i m� (VD: NV00001, trong ?� NV l� ti?n t? tu? ch?n 00001 l?y t? field t??ng ?ng c?a b?ng n�y)
+-- Bảng này dùng để tăng tự động khi 1 record được thêm vào.
+-- Dùng để ghép chuỗi mã (VD: NV00001, trong đó NV là tiền tố tuỳ chọn 00001 lấy từ field tương ứng của bảng này)
 create table Identify
 (
 	ID int identity primary key,
@@ -124,7 +124,7 @@ go
 create table LichChay_Xe 
 (
 	MaLichChay_Xe varchar(10) not null primary key,
-	TrangThai int not null, --0 l� ch?a kh?i h�nh, 1 l� xe ?� kh?i h�nh
+	TrangThai int not null, --0 là chưa khởi hành, 1 là xe đã khởi hành
 	MaLichChay varchar(10) not null,
 	MaXe varchar(10) not null,
 	fl_NgayThem datetime not null,
@@ -144,12 +144,10 @@ go
 create table TrungChuyen
 (
 	MaTrungChuyen varchar(10) not null primary key,
-	NgayKhoiHanh datetime not null,
-	GioKhoiHanh varchar(10) not null,
-	DiemDen nvarchar(100) not null,
+	DiemDi nvarchar(50) not null,
+	DiemDen nvarchar(50) not null,
+	QuangDuong int not null,
 	MaDiaChiTrungChuyen varchar(10) not null,
-	fl_NgayThem datetime not null,
-	fl_NgaySua datetime,
 	fl_Xoa int not null,
 	CONSTRAINT FK_TrungChuyen_DiaChiTrungChuyen FOREIGN KEY (MaDiaChiTrungChuyen) REFERENCES DiaChiTrungChuyen(MaDiaChiTrungChuyen)
 )
@@ -163,12 +161,10 @@ create table VeXe
 	MaNhanVien varchar(10) not null,
 	MaKhachHang varchar(10) not null,
 	MaLichChay_Xe varchar(10) not null,
-	MaTrungChuyen varchar(10),
 	fl_Xoa int not null,
 	CONSTRAINT FK_VeXe_KhachHang FOREIGN KEY (MaKhachHang) REFERENCES KhachHang(MaKhachHang),
 	CONSTRAINT FK_VeXe_NhanVien FOREIGN KEY (MaNhanVien) REFERENCES NhanVien(MaNhanVien),
-	CONSTRAINT FK_VeXe_LichChay_Xe FOREIGN KEY (MaLichChay_Xe) REFERENCES LichChay_Xe(MaLichChay_Xe),
-	CONSTRAINT FK_VeXe_TrungChuyen FOREIGN KEY (MaTrungChuyen) REFERENCES TrungChuyen(MaTrungChuyen)
+	CONSTRAINT FK_VeXe_LichChay_Xe FOREIGN KEY (MaLichChay_Xe) REFERENCES LichChay_Xe(MaLichChay_Xe)
 )
 go
 create table ChiTietVeXe
@@ -220,7 +216,7 @@ BEGIN
 END
 GO
 
-CREATE TRIGGER trg_CountLichChay ON LichChay_Xe
+CREATE TRIGGER trg_CountLichChay_Xe ON LichChay_Xe
 AFTER INSERT
 AS
 BEGIN
@@ -249,41 +245,41 @@ BEGIN
 		set SoLuong = SoLuong - 1, ThanhTien = ThanhTien - DonGia, fl_Xoa = 1
 		where VeXe.MaVeXe = (select deleted.MaVeXe from deleted)
 END
----------------Nh?p d? li?u lo?i nh�n vi�n
+---------------Nhập dữ liệu loại nhân viên
 ----------------Indentity
 go
 insert into Identify
-values(0,0,0,0,0,0)
+values(0,0,0,0,0,0,0)
 go
 insert into LoaiNhanVien
-values(N'Nh�n vi�n qu?n l�',0)
+values(N'Nhân viên quản lý',0)
 go
 insert into LoaiNhanVien
-values(N'Nh�n vi�n b�n v�',0)
+values(N'Nhân viên bán vé',0)
 go
 insert into LoaiNhanVien
-values(N'Nh�n vi�n t�i x?',0)
+values(N'Nhân viên tài xế',0)
 go
 insert into LoaiNhanVien
-values(N'Nh�n vi�n l? xe',0)
---------------Nh?p d? li?u lo?i t�i kho?n
+values(N'Nhân viên lơ xe',0)
+--------------Nhập dữ liệu loại tài khoản
 go
 insert into LoaiTaiKhoan
-values(N'Nh�n vi�n qu?n l�',0)
+values(N'Nhân viên quản lý',0)
 go
 insert into LoaiTaiKhoan
-values(N'Nh�n vi�n b�n v�',0)
+values(N'Nhân viên bán vé',0)
 go
 insert into LoaiTaiKhoan
-values(N'Kh�ch h�ng',0)
--------------Nh?p lo?i xe
+values(N'Khách hàng',0)
+-------------Nhập loại xe
 go
 insert into LoaiXe
-values(N'Xe ???ng d�i',0)
+values(N'Xe đường dài',0)
 go
 insert into LoaiXe
-values(N'Xe trung chuy?n',0)
----------------Nh?p t�i kho?n
+values(N'Xe trung chuyển',0)
+---------------Nhập tài khoản
 go
 insert into TaiKhoan
 values('NV00001','123',1,'05/09/2022',NULL,0)
@@ -293,34 +289,34 @@ values('NV00002','123',2,'05/09/2022',NULL,0)
 go
 insert into TaiKhoan
 values('KH00001','123',3,'05/09/2022',NULL,0)
----------------Nh?p nh�n vi�n
+---------------Nhập nhân viên
 go
 insert into NhanVien
-values('NV00001',N'Ph?m H?u T�nh',N'Nam','08/11/2001','0375075701','660456454545',N'S? nh� 200, V?nh L?i, V?nh Th?nh, L?p V�, ??ng Th�p',1,'NV00001','05/09/2022',NULL,0)
+values('NV00001',N'Phạm Hữu Tính',N'Nam','08/11/2001','0375075701','660456454545',N'Số nhà 200, Vĩnh Lợi, Vĩnh Thạnh, Lấp Vò, Đồng Tháp',1,'NV00001','05/09/2022',NULL,0)
 go
 insert into NhanVien
-values('NV00002',N'Nguy?n C?m L�',N'N?','01/19/2001','0939989999','940565656232',N'?�nh Th�nh, ?�ng H?i, TP. B?c Li�u',2,'NV00002','05/09/2022',NULL,0)
+values('NV00002',N'Nguyễn Cẩm Lê',N'Nữ','01/19/2001','0939989999','940565656232',N'Đình Thành, Đông Hải, TP. Bạc Liêu',2,'NV00002','05/09/2022',NULL,0)
 go
 insert into NhanVien
-values('NV00003',N'Tr?n Tr?ng',N'Nam','01/01/2001','0562134587','558741254875',N'TP. H? Ch� Minh',3,NULL,'05/09/2022',NULL,0)
----------------Nh?p kh�ch h�ng
+values('NV00003',N'Trần Trọng',N'Nam','01/01/2001','0562134587','558741254875',N'TP. Hồ Chí Minh',3,NULL,'05/09/2022',NULL,0)
+---------------Nhập khách hàng
 go
 insert into KhachHang
-values('KH00001',N'L� Hu?nh Nam',N'Nam','01/10/2001','0856123456','540521541236',N'Qu?n 6, TP. H? Ch� Minh','KH00001','05/09/2022',NULL,0)
---------------Nh?p l? tr�nh
+values('KH00001',N'Lê Huỳnh Nam',N'Nam','01/10/2001','0856123456','540521541236',N'Quận 6, TP. Hồ Chí Minh','KH00001','05/09/2022',NULL,0)
+--------------Nhập lộ trình
 go
 insert into LoTrinh
-values('LT00001',N'H? Ch� Minh',N'Long An',30,50000,'05/09/2022',NULL,0)
+values('LT00001',N'Hồ Chí Minh',N'Long An',30,50000,'05/09/2022',NULL,0)
 go
 insert into LoTrinh
-values('LT00002',N'H? Ch� Minh',N'Ti?n Giang',60,75000,'05/09/2022',NULL,0)
+values('LT00002',N'Hồ Chí Minh',N'Tiền Giang',60,75000,'05/09/2022',NULL,0)
 go
 insert into LoTrinh
-values('LT00003',N'H? Ch� Minh',N'Sa ?�c',170,100000,'05/09/2022',NULL,0)
+values('LT00003',N'Hồ Chí Minh',N'Sa Đéc',170,100000,'05/09/2022',NULL,0)
 go
 insert into LoTrinh
-values('LT00004',N'H? Ch� Minh',N'??ng Th�p',200,150000,'05/09/2022',NULL,0)
-------------Nh?p xe
+values('LT00004',N'Hồ Chí Minh',N'Đồng Tháp',200,150000,'05/09/2022',NULL,0)
+------------Nhập xe
 go
 insert into Xe
 values('XE00001','51B00001',46,1,0)
@@ -366,14 +362,14 @@ values('XE00014','51B00014',16,2,0)
 go
 insert into Xe
 values('XE00015','51B00015',16,2,0)
--------------Nh?p l?ch ch?y
+-------------Nhập lịch chạy
 go
 insert into LichChay
 values('LC00001','05/25/2022','19','LT00001','NV00003','05/09/2022',NULL,0)
 go
 insert into LichChay
-values('LC00002','05/25/2022','19','LT00002','NV00003','05/09/2022',NULL,0)
---------------Nh?p l?ch ch?y xe
+values('LC00002','05/25/2022','6','LT00002','NV00003','05/09/2022',NULL,0)
+--------------Nhập lịch chạy xe
 go
 insert into LichChay_Xe
 values('LCX00001',0,'LC00001','XE00001','05/09/2022',NULL,0)
@@ -386,14 +382,64 @@ values('LCX00003',0,'LC00002','XE00003','05/09/2022',NULL,0)
 go
 insert into LichChay_Xe
 values('LCX00004',0,'LC00002','XE00004','05/09/2022',NULL,0)
--------------Nh?p v� xe
+-------------Nhập vé xe
 go
 insert into VeXe
-values('VX00001',50000,2,100000,'NV00002','KH00001','LCX00001',NULL,0)
-------------Nh?p chi ti?t v� xe
+values('VX00001',50000,2,100000,'NV00002','KH00001','LCX00001',0)
+------------Nhập chi tiết vé xe
 go
 insert into ChiTietVeXe
 values('VX00001','01A')
 go
 insert into ChiTietVeXe
 values('VX00001','02A')
+------------Nhập địa chỉ
+go
+insert into DiaChiTrungChuyen
+values('DC00001',N'Hồ Chí Minh',0)
+go
+insert into DiaChiTrungChuyen
+values('DC00002',N'Đồng Tháp',0)
+go
+insert into DiaChiTrungChuyen
+values('DC00003',N'Bạc Liêu',0)
+---------------Nhập trung chuyển
+go
+insert into TrungChuyen
+values('TC00001','BXMT','Bình Tân',5,'DC00001',0)
+go
+insert into TrungChuyen
+values('TC00002','BXMT','Tân Phú',16,'DC00001',0)
+go
+insert into TrungChuyen
+values('TC00003','BXMT','Q6',3,'DC00001',0)
+go
+insert into TrungChuyen
+values('TC00004','Bình Tân','Q12',18,'DC00001',0)
+go
+insert into TrungChuyen
+values('TC00005','Tân Phú','Q12',2,'DC00001',0)
+go
+insert into TrungChuyen
+values('TC00006','Tân Phú','Q5',7,'DC00001',0)
+go
+insert into TrungChuyen
+values('TC00007','Tân Phú','Q10',6,'DC00001',0)
+go
+insert into TrungChuyen
+values('TC00008','Q6','Q10',5,'DC00001',0)
+go
+insert into TrungChuyen
+values('TC00009','Q6','Tân Phú',10,'DC00001',0)
+go
+insert into TrungChuyen
+values('TC00010','Q12','BXMD',20,'DC00001',0)
+go
+insert into TrungChuyen
+values('TC00011','Q5','BXMD',10,'DC00001',0)
+go
+insert into TrungChuyen
+values('TC00012','Q10','Q5',8,'DC00001',0)
+go
+insert into TrungChuyen
+values('TC00013','Q10','BXMD',5,'DC00001',0)
